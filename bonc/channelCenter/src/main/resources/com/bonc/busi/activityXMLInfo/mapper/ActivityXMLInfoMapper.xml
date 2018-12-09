@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.activityXMLInfo.mapper.ActivityXMLInfoMapper">
+
+  <resultMap type="com.bonc.busi.activityXMLInfo.po.ActivityXMLInfo" id="activityXMLInfoMap">
+  
+    <result property="id" column="ID"/>
+  	<result property="activityId" column="ACTIVITY_ID"/>
+  	<result property="configInfo" column="CONFIG_INFO"/>
+  	<result property="tenantId" column="TENANT_ID"/>
+  
+  </resultMap>
+
+
+  <!-- 向YJQD_ACTIVITY_XML_INFO表中插入数据-->
+  <insert id="insertActivityXMLInfo">
+  	INSERT INTO 
+  		YJQD_ACTIVITY_XML_INFO(ACTIVITY_ID,CONFIG_INFO,TENANT_ID,ACTIVITY_SEQ_ID,DEAL_MONTH) 
+  	VALUES
+  	    (#{activityXMLInfo.activityId},#{activityXMLInfo.configInfo},#{activityXMLInfo.tenantId},
+  	    #{activityXMLInfo.activitySeqId},#{activityXMLInfo.dealMonth})
+  </insert>
+  
+  <!-- 更新YJQD_ACTIVITY_XML_INFO表中的xml数据-->
+  <update id="updateActivityXMLInfo">
+  	UPDATE
+  		YJQD_ACTIVITY_XML_INFO
+  	SET
+  		CONFIG_INFO = #{activityXMLInfo.configInfo} 
+    WHERE
+        ACTIVITY_ID = #{activityXMLInfo.activityId}
+    AND 
+    	TENANT_ID = #{activityXMLInfo.tenantId}
+    AND
+  		ACTIVITY_SEQ_ID = #{activityXMLInfo.activitySeqId}
+  	AND
+  		DEAL_MONTH = #{activityXMLInfo.dealMonth}
+  </update>
+ 
+ 
+  <!-- 根据activityId和tenantId查询YJQD_ACTIVITY_XML_INFO表中数据 -->
+  <select id="findActivityXMLInfo" resultMap="activityXMLInfoMap">
+  	SELECT
+  	    ACTIVITY_ID,CONFIG_INFO,TENANT_ID
+  	FROM
+  	    YJQD_ACTIVITY_XML_INFO 
+  	WHERE
+  	    ACTIVITY_ID = #{activityId}
+  	AND
+  		TENANT_ID = #{tenantId}
+  	AND
+  		ACTIVITY_SEQ_ID = #{activitySeqId}
+  	AND
+  		DEAL_MONTH = #{dealMonth}
+  </select>
+ 
+</mapper>

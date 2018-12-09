@@ -1,0 +1,4 @@
+FROM 192.168.0.29:5000/tomcat:7-jre7-ths
+COPY target/ordertask-scheduled2.war /usr/local/tomcat/webapps/
+CMD ["catalina.sh", "run"]
+

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.ftpInfo.mapper.FTPInfoMapper">
+
+
+  <resultMap type="com.bonc.busi.ftpInfo.po.FTPInfo" id="ftpInfoMap">
+  
+    <result property="id" column="ID"/>
+  	<result property="provId" column="PROV_ID"/>
+    <result property="provDesc" column="PROV_DESC"/>
+    <result property="host" column="FTP_IP"/>
+    <result property="port" column="FTP_PORT"/>
+    <result property="username" column="FTP_USER"/>
+    <result property="password" column="FTP_PASSWORD"/>
+    <result property="filePath" column="UP_MENU"/>
+    <result property="tenantId" column="TENANT_ID"/>
+    
+  </resultMap>
+  
+  
+  <!-- 根据PROV_ID查询FTP服务器配置信息  -->
+  <select id="findFTPInfoByProvId" resultMap="ftpInfoMap">
+  
+  	SELECT
+  		ID,PROV_ID,PROV_DESC,FTP_IP,FTP_PORT,FTP_USER,FTP_PASSWORD,UP_MENU,TENANT_ID
+  	FROM
+  		YJQD_FTP_INFO 
+    WHERE
+    	PROV_ID = #{provId} 
+    AND
+        TENANT_ID = #{tenantId}
+  </select>
+  
+  
+  <!-- 向YJQD_FTP_INFO表中插入数据 -->
+  <insert id="insertFTPInfo">
+  
+  	INSERT INTO
+  		YJQD_FTP_INFO(PROV_ID,PROV_DESC,FTP_IP,FTP_PORT,FTP_USER,FTP_PASSWORD,UP_MENU,TENANT_ID) 
+  	VALUES
+  	    (#{ftpInfo.provId},#{ftpInfo.provDesc},#{ftpInfo.host},#{ftpInfo.port},
+  	    #{ftpInfo.username},#{ftpInfo.password},#{ftpInfo.filePath},#{ftpInfo.tenantId})
+  	    
+  </insert>
+ 
+</mapper>

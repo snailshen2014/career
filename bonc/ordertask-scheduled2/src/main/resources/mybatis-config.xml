@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<settings>
+		<!-- mybatis map空处理为null <setting value="true" name="callSettersOnNulls"/> -->
+		<!--日志 -->
+		<setting name="logPrefix" value="mapper." />
+		<setting name="defaultStatementTimeout" value="3600"/>
+	</settings>
+	
+	<!--mapper映射 -->
+	<mappers>
+		<package name="com.bonc.busi.*.mapper"/>
+	</mappers>
+</configuration>

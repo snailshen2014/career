@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.sendField.mapper.SendFieldMapper">
+
+   <resultMap type="com.bonc.busi.sendField.po.SendField" id="sendFieldMap">
+   
+  	<result property="columnName" column="COLUMN_NAME"/>
+  	<result property="alias" column="ALIAS"/>
+    <result property="comments" column="COMMENTS"/>
+  	<result property="ord" column="ORD"/>
+    
+  </resultMap>
+
+  <!-- 查找YJQD_SEND_FIELD表中所有数据，并按ORD字段进行排序（升序） -->
+  <select id="findSendField" resultType="java.util.HashMap">
+  	SELECT 
+  		COLUMN_NAME,ALIAS,ORD,COMMENTS
+  	FROM
+  		YJQD_SEND_FIELD
+  		WHERE TENANT_ID=#{tenantId}
+    ORDER BY 
+    	ORD 
+    ASC
+  </select>
+  
+  <!-- 向YJQD_SEND_FIELD表中插入数据 -->
+  <insert id="insertSendField">
+  	INSERT INTO 
+  		YJQD_SEND_FIELD 
+  	VALUES
+  		(#{sendField.columnName},#{sendField.alias},
+  	 	#{sendField.comments}#{sendField.ord})
+  </insert>
+ 
+  <!-- 根据COLUMN_NAME字段删除信息 --> 
+  <delete id="deleteSendField">
+  	DELETE 
+  	FROM  
+  		YJQD_SEND_FIELD 
+  	WHERE 
+  		COLUMN_NAME = #{sendField.columnName}
+  </delete>
+  
+</mapper>

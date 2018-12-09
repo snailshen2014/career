@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.sendData.mapper.SendDataMapper">
+
+  <!-- 根据 tenantId ordStatus channelList 查询需要下发的数据 -->
+  <select id="findOrderOneSendDataByActivity"  resultType="java.util.HashMap">
+   	SELECT 
+ 		USR.USER_ID SUBS_INSTANCE_ID,
+		USR.DEVICE_NUMBER,
+		USR.MB_NET_TYPE SERVICE_TYPE,
+		ACT.ACTIVITY_ID,
+		ACT.GROUP_ID USERGROUP_ID,
+		USR.PROV_ID,
+		USR.AREA_ID,
+		USR.PAY_MODE,
+		USR.PRODUCT_BASE_CLASS,
+		USR.ACTIVITY_TYPE,
+		USR.MB_AGREEMENT_END_TIME EXP_DATE,
+		USR.ACCT_FEE,USR.WENDING_FLAG,
+		USR.ELECCHANNEL_FLAG CHNL_TYPE3,
+		ACT.TENANT_ID,
+		ORD.DEAL_MONTH,
+		ORD.CHANNEL_STATUS STATUS,
+		ORD.ACTIVITY_SEQ_ID
+		FROM PLT_USER_LABEL  USR,
+	(SELECT  DISTINCT USER_ID,DEAL_MONTH,CHANNEL_STATUS,ACTIVITY_SEQ_ID from PLT_ORDER_INFO_ONE WHERE
+	 ACTIVITY_SEQ_ID=#{activitySeqId}  AND DEAL_MONTH=#{dealMonth} AND ORDER_STATUS='5'
+		AND CHANNEL_STATUS = '0' LIMIT #{pageSize}) ORD,
+	    PLT_ACTIVITY_INFO ACT
+	WHERE
+	    USR.PARTITION_FLAG = #{partitionFlag}
+    AND
+	    ORD.USER_ID = USR.USER_ID 
+    AND 
+        ORD.ACTIVITY_SEQ_ID = ACT.REC_ID 
+    AND 
+        ACT.TENANT_ID =#{tenantId}
+		
+		
+  </select>
+  
+  <delete id="deleteSendDataByActivity">
+  	DELETE FROM YJQD_SEND_DATA WHERE 
+  		TENANT_ID =#{tenantId}
+  		AND DEAL_MONTH=#{dealMonth}
+  		AND ACTIVITY_SEQ_ID=#{activitySeqId}
+  </delete>
+  
+   <delete id="deleteSendData">
+  	DELETE FROM YJQD_SEND_DATA WHERE 
+  		date_sub(curdate(), INTERVAL 7 DAY) >= date(CREATE_DATE)
+    AND
+        TENANT_ID = '${tenantId}'
+  </delete>
+  
+  <!-- 将下发数据移入历史表 -->
+  <insert id="insertSendDataHis" statementType="STATEMENT">
+  	
+  	/*!mycat:sql=SELECT * FROM PLT_USER_LABEL WHERE TENANT_ID = '${tenantId}' */
+  	INSERT INTO
+  		YJQD_SEND_DATA_HIS
+  	SELECT 
+  	    *,'${inputTime}'
+    FROM
+    	YJQD_SEND_DATA
+    WHERE
+        date_sub(curdate(), INTERVAL 7 DAY) >= date(CREATE_DATE)
+    AND
+        TENANT_ID = '${tenantId}'
+  	
+  </insert>
+ 
+</mapper>

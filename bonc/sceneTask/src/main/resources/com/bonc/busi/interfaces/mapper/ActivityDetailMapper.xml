@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.interfaces.mapper.ActivityDetailMapper">
+
+	<!-- 获取活动日志列表 -->
+	<select id="getActivityLogListByActivityList" resultType="java.util.HashMap">
+
+		SELECT
+		ACTIVITY_ID activityId,
+		CASE
+		WHEN ACTIVITY_STATUS = '3' THEN '1'
+		WHEN ACTIVITY_STATUS = '1' THEN '2'
+		ELSE '3' END
+		AS activityStatus,
+		CASE
+		WHEN ACTIVITY_STATUS = '3' THEN '活动工单生成中'
+		WHEN ACTIVITY_STATUS = '1' THEN '活动工单已生成'
+		ELSE '其他状态' END
+		AS activityStatusDesc,
+		DATE_FORMAT(LAST_ORDER_CREATE_TIME,'%Y%m%d%H%i%s') logTime
+		FROM PLT_ACTIVITY_INFO
+		WHERE
+		TENANT_ID = #{parameterMap.tenantId}
+		AND
+		REC_ID in
+		(SELECT
+		MAX(REC_ID)
+		FROM
+		PLT_ACTIVITY_INFO
+		WHERE
+		ACTIVITY_ID in
+		<foreach item="item" index="index" collection="parameterMap.activityIdList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		GROUP BY ACTIVITY_ID
+		)
+		<if test="parameterMap.startTime != null and parameterMap.endTime != null">
+			AND unix_timestamp(LAST_ORDER_CREATE_TIME) BETWEEN
+			unix_timestamp(#{parameterMap.startTime})
+			AND unix_timestamp(#{parameterMap.endTime})
+		</if>
+		<if test="parameterMap.activityStatusList != null">
+			AND ACTIVITY_STATUS in
+			<foreach item="item" index="index" collection="parameterMap.activityStatusList"
+				open="(" separator="," close=")">
+				CASE WHEN #{item} = '1' THEN '3' WHEN #{item} = '2' THEN '1' ELSE null
+				END
+			</foreach>
+		</if>
+		<if test="parameterMap.orderBy != null">
+			ORDER BY LAST_ORDER_CREATE_TIME ${parameterMap.orderBy}
+		</if>
+		LIMIT 0,#{parameterMap.size}
+
+	</select>
+
+	<!-- 获取活动ID列表 -->
+	<select id="getActivityIdList" resultType="java.lang.String">
+
+		SELECT
+		ACTIVITY_ID
+		FROM
+		PLT_ACTIVITY_INFO
+		WHERE
+		ACTIVITY_ID in
+		<foreach item="item" index="index" collection="parameterMap.activityIdList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		AND
+		TENANT_ID = #{parameterMap.tenantId}
+
+	</select>
+
+</mapper>

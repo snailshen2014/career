@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.orderInfo.mapper.OrderInfoMapper">
+
+  <!-- 根据  activitySeqId ordStatus channelList 更新订单状态 -->
+  <update id="updateChannelStatus" >
+   UPDATE 
+  		PLT_ORDER_INFO_ONE
+	SET CHANNEL_STATUS = #{channelStatus}
+	WHERE ACTIVITY_SEQ_ID =#{activitySeqId}
+		AND ORDER_STATUS=#{ordStatus}
+		AND DEAL_MONTH=#{dealMonth}
+		AND TENANT_ID=#{tenantId} 
+		AND CHANNEL_STATUS='0' 
+  </update>
+  
+  
+  <update id="updateChannelStatusBatch" >
+   UPDATE 
+  		PLT_ORDER_INFO_ONE
+	SET CHANNEL_STATUS = #{channelStatus}
+	WHERE ACTIVITY_SEQ_ID = #{activitySeqId}
+		AND ORDER_STATUS= #{ordStatus}
+		AND DEAL_MONTH= #{dealMonth}
+		AND TENANT_ID= #{tenantId} 
+		AND CHANNEL_STATUS='0' 
+        AND USER_ID IN 
+ 	<foreach collection="userIdList" separator="," close=")" open="(" item="userId"> 
+			 #{userId}
+		</foreach>	
+  </update>
+ 
+</mapper>

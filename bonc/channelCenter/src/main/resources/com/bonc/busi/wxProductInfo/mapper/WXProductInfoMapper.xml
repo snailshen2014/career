@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.wxProductInfo.mapper.WXProductInfoMapper">
+
+   <resultMap type="com.bonc.busi.wxProductInfo.po.WXProductInfo" id="wxProductInfoMap">
+  
+    <result property="productType" column="product_type"/>
+  	<result property="price" column="price"/>
+  	<result property="SAPName" column="product_name"/>
+  	<result property="SAPId" column="product_order_id"/>
+  	<result property="netType" column="net_type"/>
+  	<result property="flowType" column="flow_type"/>
+  	<result property="extraProductType" column="extra_product_type"/>
+  	<result property="order_flag" column="order_flag"/>
+  	<result property="productDesc" column="product_desc"/>
+  	<result property="tenantId" column="TENANT_ID"/>
+  	
+  	<result property="productId" column="PRODUCT_ID"/>
+  	<result property="elementId" column="ELEMENT_ID"/>
+ 
+  </resultMap>
+
+  <!--从远程产品表中查询产品信息 -->
+  <select id="findProductByProductId" resultMap="wxProductInfoMap">
+  
+    SELECT  
+        PRODUCT_SUCCESSTYPE AS product_type,
+  		PAG_FLUXG_FEE AS price,
+  		CASE 
+  		WHEN PRODUCT_CLASSTYPE1 = '01' THEN PRODUCT_NAME 
+  		WHEN PRODUCT_CLASSTYPE1 = '02' THEN SAP_PRODUCT_NAME
+  		ELSE NULL END
+  		AS product_name,
+  		CASE 
+  		WHEN PRODUCT_CLASSTYPE1 = '01' THEN PRODUCT_CODE
+  		WHEN PRODUCT_CLASSTYPE1 = '02' THEN SAP_PRODUCT_ID
+  		ELSE NULL END
+  		AS product_order_id,
+        PRODUCT_CLASSTYPE1 AS net_type,
+        PRODUCT_CLASSTYPE2 AS flow_type,
+        FLUX_PRODUCT_MODE AS extra_product_type,
+  		ISVALID AS order_flag,
+  		PRODUCT_DES AS product_desc,
+        TENANT_ID,
+        FLUX_PRODUCT_ID AS PRODUCT_ID,
+        PRODUCT_CODE AS ELEMENT_ID
+  	FROM 
+  		CLYX_P_PRODUCT_INFO
+  	WHERE
+  		PRODUCT_CODE = #{elementId}
+  	AND
+  	    TENANT_ID = #{tenantId}
+     	
+  </select>
+  
+  <!-- 查看本地产品表中是否有指定产品 --> 
+  <select id="findWXProductInfoByProductId" resultType="java.lang.Integer">
+  
+  	SELECT  
+  		COUNT(id)
+  	FROM 
+  		WX_PRODUCT_INFO
+  	WHERE
+  		product_order_id = #{SAPId}
+    AND
+     	TENANT_ID = #{tenantId}
+  		
+  </select>
+  
+  <!-- 插入本地产品表 -->
+  <insert id="insertWXProductInfo">
+  	INSERT INTO 
+  		WX_PRODUCT_INFO
+  		(product_type,price,product_name,product_order_id,net_type,flow_type,extra_product_type,
+  		order_flag,product_desc,TENANT_ID)
+  	VALUES
+  		(#{productInfo.productType},#{productInfo.price},#{productInfo.SAPName},#{productInfo.SAPId},
+  		 #{productInfo.netType},#{productInfo.flowType},#{productInfo.extraProductType},#{productInfo.order_flag},
+  		 #{productInfo.productDesc},#{productInfo.tenantId})
+  </insert>
+  
+  <!-- 更新本地产品表 -->
+  <update id="updateWXProductInfoByProductId">
+  
+    <!-- 批量更新，必须主键 -->
+    <!-- INSERT INTO 
+    	WX_PRODUCT_INFO(id,product_type,price,product_name,product_desc) 
+    VALUES 
+    <foreach collection="wxProductInfoSet" index="index" item="item" separator=",">
+    	(#{item.})
+    </foreach>
+	ON DUPLICATE KEY 
+	UPDATE 
+		price=VALUES(price),
+		product_type=VALUES(product_type),
+        product_name=VALUES(product_name),
+		product_desc=VALUES(product_desc) -->
+		
+  	UPDATE
+  		 WX_PRODUCT_INFO
+    SET  
+         product_type = #{productInfo.productType},
+         price = #{productInfo.price},
+         product_name = #{productInfo.SAPName}, 
+         net_type = #{productInfo.netType},      
+         flow_type = #{productInfo.flowType},
+         extra_product_type = #{productInfo.extraProductType},
+         order_flag = #{productInfo.order_flag},
+         product_desc = #{productInfo.productDesc}
+    WHERE
+    	 product_order_id = #{productInfo.SAPId}
+    AND
+     	 TENANT_ID = #{productInfo.tenantId}
+    	
+  </update>
+ 
+</mapper>

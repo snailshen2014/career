@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.wxOrderInfo.mapper.WXOrderInfoMapper">
+
+
+  <!-- <resultMap type="com.bonc.busi.wxOrderInfo.po.WXOrderInfo" id="wxOrderInfoMap">
+    
+  	<result property="orderId" column="REC_ID"/>
+  	<result property="telInt" column="PHONE_NUMBER"/>
+  	<result property="startTime" column="BEGIN_DATE"/>
+    <result property="endTime" column="END_DATE"/>
+    <result property="userId" column="USER_ID"/>
+    
+     
+    <result property="productId" column="MB_PACKAGE_ID"/>
+    <result property="isFollowPublic" column="IS_FOLLOW_PUBLIC"/>
+    <result property="netType" column="NET_TYPE"/>
+    <result property="openId" column="USER_WEIXIN_ID"/>
+   
+  </resultMap> -->
+  
+  <resultMap type="com.bonc.busi.wxActivityInfo.po.WXActivityInfo" id="wxActivityInfoMap">
+  
+    <result property="recId" column="REC_ID"/>
+  	<result property="activityId" column="ACTIVITY_ID"/>
+  	<result property="activityName" column="ACTIVITY_NAME"/>
+  	<result property="startTime" column="BEGIN_DATE"/>
+    <result property="endTime" column="END_DATE"/>
+    <result property="webChatInfo" column="WECHAT_INFO"/>
+    <result property="isMutex" column="SELF_SEND_CHANNEL_RULE"/>
+    <result property="tenantId" column="TENANT_ID"/>
+    
+  </resultMap>
+  
+  <!-- 查询所有符合条件的活动 -->
+  <select id="findActivityList" resultMap="wxActivityInfoMap">
+  
+  	SELECT 
+  		ai.REC_ID,ai.ACTIVITY_ID,ai.ACTIVITY_NAME,ai.BEGIN_DATE,
+  		ai.END_DATE,acd.WECHAT_INFO,ai.SELF_SEND_CHANNEL_RULE,ai.TENANT_ID
+  	FROM
+  		PLT_ACTIVITY_INFO ai,PLT_ACTIVITY_CHANNEL_DETAIL acd,PLT_ACTIVITY_CHANNEL_STATUS acs		
+  	WHERE
+  		ai.TENANT_ID = #{config.tenantId}
+  	AND
+  	 	acd.TENANT_ID = #{config.tenantId}
+  	AND
+  		acs.TENANT_ID = #{config.tenantId}
+  	AND
+  		acd.CHANN_ID = #{config.channelId}
+  	AND
+  		acs.CHANNEL_ID = #{config.channelId}
+  	AND
+  	    acs.STATUS = #{config.activityChannelReadyStatus}
+    AND 
+		ai.REC_ID = acd.ACTIVITY_SEQ_ID
+    AND 
+        ai.REC_ID = acs.ACTIVITY_SEQ_ID
+    AND
+        ai.ACTIVITY_STATUS in
+    <foreach collection="activityStatusList" index="index" open="(" close=")" separator="," item="item">
+    	#{item}
+    </foreach>
+  </select>
+  
+  <!-- 根据活动ID查找TemplateId -->
+  <select id="findTemplateIdByActivityId" resultType="java.lang.String">
+  	SELECT 
+  		TEMPLATE_ID
+  	FROM
+    	CLYX_ACTIVITY_WECHAT_MID
+  	WHERE
+  		TENANT_ID = #{config.tenantId}
+  	AND
+  	    STATE = #{webChatStatus}
+    AND
+    	ACTIVITY_ID = #{activityId}
+  </select>
+  
+  <!-- 获取活动对应的产品列表 -->
+  <select id="findProductIdListByAvtivityId" resultType="java.lang.String">
+  
+  	SELECT
+    	PRODUCTCODE
+  	FROM
+  		PLT_ACTIVITY_PRODUCT_LIST
+  	WHERE
+  		ACTIVITY_ID = #{wxActivityInfo.activityId}
+  	AND
+  		TENANT_ID = #{wxActivityInfo.tenantId}
+  		
+  </select>
+  
+  <!-- 查询变量变量名、字段名 -->
+  <select id="findFieldList" resultType="java.util.HashMap">
+  	
+  	SELECT 
+  		tvc.TEM_VAR_CONTENT,tvc.TEM_VAR_VALUE,tvc.DATA_SOURCE_ID,tvds.DATA_SOURCE_TABLE 
+	FROM 
+		TEM_VAR_CONFIGURE tvc,TEM_VAR_DATA_SOURCE tvds
+	WHERE 
+		tvc.PUBLIC_ID = #{wxActivityInfo.publicId}
+	AND 
+		tvc.TEMPLATE_ID = #{wxActivityInfo.templateId}
+	AND 
+		tvc.DATA_SOURCE_ID = tvds.DATA_SOURCE_ID
+  
+  </select>
+  
+  <!-- 获取微信工单的REC_ID列表 -->
+  <select id="getOrdereRecIdList" resultType="java.lang.Integer">
+  	SELECT 
+  		oi.REC_ID
+  	FROM 
+  	    PLT_ORDER_INFO_WEIXIN oi
+  	WHERE
+  	    oi.CHANNEL_ID = #{config.channelId}
+    AND
+  	    oi.TENANT_ID = #{config.tenantId}
+    AND
+  		oi.ACTIVITY_SEQ_ID = #{wxActivityInfo.recId}
+  	AND
+    	oi.ORDER_STATUS = #{config.orderStatusReady}
+    AND
+    	oi.CHANNEL_STATUS = #{config.channelStatusReady}
+  </select>
+
+  <!-- 分页查询微信工单  -->
+  <select id="findWXOrderInfoListByChannelId" resultType="java.util.HashMap" statementType="STATEMENT">
+    <!-- /*!mycat:sql=SELECT * FROM PLT_USER_LABEL WHERE TENANT_ID = '${config.tenantId}' */ -->
+    SELECT 
+        DISTINCT
+  		oi.REC_ID orderId,oi.PHONE_NUMBER telInt,oi.BEGIN_DATE startTime,oi.END_DATE endTime,
+  		ul.MB_PACKAGE_ID productId,wi.USER_WEIXIN_ID openId,
+  		<foreach item="item" index="index" collection="mysqlFieldList" separator="," close=",">
+  			${item}
+  		</foreach>
+  		<!-- ul.MB_NET_TYPE,ul.AREA_ID,ul.MB_AGREEMENT_TYPE,ul.MB_AGREEMENT_END_TIME,
+  		ul.MB_PRODUCT_TYPE,ul.PROV_ID,ul.MB_ARPU,ul.ELECCHANNEL_FLAG,
+  		ul.WENDING_FLAG,ul.CO_B_01,ul.KD_PACKAGE_ID,ul.N_05_M,ul.N_03_M, -->
+  		<foreach collection="fieldList" index="index" item="item" separator="," close=",">
+  			${item.sqlField} AS '${item.TEM_VAR_CONTENT}'
+  		</foreach>
+        CASE 
+        WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTw} AND ul.CO_B_01 in ('01','02') THEN 10
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTw} AND ul.CO_B_01 in ('03','04','05') THEN 16
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTh} AND ul.CO_B_01 in ('01','02') THEN 33
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTh} AND ul.CO_B_01 in ('03','04','05') THEN 17
+        WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeFo} THEN 50
+	    <!-- WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTw} AND ul.CO_B_01 = ${config.netTypePost} THEN 10
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTw} AND ul.CO_B_01 = ${config.netTypeZPre} THEN 10
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTw} AND ul.CO_B_01 = ${config.netTypePre} THEN 16
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTh} AND ul.CO_B_01 = ${config.netTypePost} THEN 33
+	    WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTh} AND ul.CO_B_01 = ${config.netTypeZPre} THEN 33
+        WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeTh} AND ul.CO_B_01 = ${config.netTypePre} THEN 17
+        WHEN substring(ul.MB_NET_TYPE,1,1) = ${config.netTypeFo} THEN 50 -->
+        ELSE 99 END
+        AS netType
+  	FROM 
+  	    PLT_ORDER_INFO_WEIXIN oi,PLT_USER_LABEL ul,PLT_WEIXIN_INFO wi,PLT_ACTIVITY_INFO ai
+  	WHERE
+  	    oi.ACTIVITY_SEQ_ID = ${wxActivityInfo.recId}
+  	AND
+  	    ul.PARTITION_FLAG = ${config.partitionFlag}
+    AND
+  		oi.TENANT_ID = '${config.tenantId}'
+    AND
+	   	oi.REC_ID in
+	    <foreach item="item" index="index" collection="orderRecIdList" open="(" separator="," close=")">
+	        ${item}
+	    </foreach>
+    AND
+        oi.USER_ID = ul.USER_ID
+    AND 
+        oi.USER_ID = wi.USER_ID
+    AND 
+        ul.TENANT_ID = '${config.tenantId}'
+    AND  
+        wi.UNICOM_WEIXIN_ID = '${wxActivityInfo.publicId}'
+    AND
+        ul.${wxActivityInfo.publicCode} = '${config.wxPublicFollow}'
+    AND
+        ai.REC_ID = ${wxActivityInfo.recId}
+    AND 
+        ai.ACTIVITY_STATUS in
+    <foreach collection="activityStatusList" index="index" open="(" close=")" separator="," item="item">
+    	${item}
+    </foreach>
+  </select>
+  
+  <!--更新PLT_ORDER_INFO(工单表)中的渠道状态 -->
+  <update id="updateWXChannelStatus">
+  
+     UPDATE 
+     	PLT_ORDER_INFO_WEIXIN
+     SET 
+        CHANNEL_STATUS = #{wxChannelStatus}
+     WHERE
+     	REC_ID in
+     	<foreach item="item" index="index" collection="wxOrderInfoList" open="(" separator="," close=")">
+	        #{item.orderId}
+	    </foreach>
+     AND
+     	TENANT_ID = #{config.tenantId}
+     AND
+        CHANNEL_STATUS = #{config.channelStatusReady}
+     	
+  </update>
+  
+  <!-- 更新PLT_ORDER_INFO_SMS(短信工单表)中的渠道状态 -->
+  <!-- <update id="updateDXChannelStatus">
+  	 UPDATE 
+     	PLT_ORDER_INFO_SMS
+     SET 
+        CHANNEL_STATUS = #{config.dxChannelStatusMutex}
+     WHERE
+     	ACTIVITY_SEQ_ID = #{wxOrderInfo.activitySeqId}  
+     AND
+        PHONE_NUMBER = #{wxOrderInfo.telInt}	
+     AND
+     	TENANT_ID = #{config.tenantId}
+     AND
+        CHANNEL_STATUS = #{config.channelStatusReady}
+  </update> -->
+
+  <!--将组装好的微信工单入表 -->
+  <!-- <insert id="insertWXOrderInfo">
+  
+  	INSERT INTO
+    	WX_ORDER_INFO
+    	(order_id,tel_int,net_type,wxhsh,template_id,activity_name,product_flag,product_id1,element_id1,
+    	package_id1,orderproduct_id1,product_id2,element_id2,package_id2,orderproduct_id2,product_id3,
+    	element_id3,package_id3,orderproduct_id3,order_start_time,order_end_time,activity_start_time,
+    	activity_end_time,TENANT_ID,public_id,open_id,summary) 
+  	VALUES
+  	<foreach collection="wxOrderInfoList" index="index" item="wxOrderInfo" close=")" open="(" separator="),(">
+  		#{wxOrderInfo.orderId},#{wxOrderInfo.telInt}, #{wxOrderInfo.netType},#{wxOrderInfo.wxActivityInfo.wxhsh},
+  		#{wxOrderInfo.wxActivityInfo.templateId},#{wxOrderInfo.wxActivityInfo.activityName},
+  	    #{wxOrderInfo.wxActivityInfo.productFlag},#{wxOrderInfo.wxActivityInfo.productId1},
+  		#{wxOrderInfo.wxActivityInfo.elementId1},#{wxOrderInfo.wxActivityInfo.packageId1},
+  	    #{wxOrderInfo.wxActivityInfo.orderProductId1},#{wxOrderInfo.wxActivityInfo.productId2},
+  		#{wxOrderInfo.wxActivityInfo.elementId2},#{wxOrderInfo.wxActivityInfo.packageId2},
+  		#{wxOrderInfo.wxActivityInfo.orderProductId2},#{wxOrderInfo.wxActivityInfo.productId3},
+  		#{wxOrderInfo.wxActivityInfo.elementId3},#{wxOrderInfo.wxActivityInfo.packageId3},
+  		#{wxOrderInfo.wxActivityInfo.orderProductId3},#{wxOrderInfo.startTime},
+  		#{wxOrderInfo.endTime},#{wxOrderInfo.wxActivityInfo.startTime},
+  	    #{wxOrderInfo.wxActivityInfo.endTime},#{wxOrderInfo.wxActivityInfo.tenantId},
+  	    #{wxOrderInfo.wxActivityInfo.publicId},#{wxOrderInfo.openId},#{wxOrderInfo.wxActivityInfo.summary}
+  	</foreach>	
+  	    
+  </insert> -->
+  
+  <!-- 查看统计信息表中是否有此条记录 -->
+  <select id="getCountStatistic" resultType="Integer">
+  
+  	SELECT 
+  		COUNT(*)
+  	FROM
+  		PLT_ORDER_STATISTIC_SEND
+  	WHERE
+  		ACTIVITY_SEQ_ID = #{activitySeqId}
+  	AND 
+  		CHANNEL_ID = #{config.channelId}
+  	AND
+  		TENANT_ID = #{config.tenantId}
+  
+  </select>
+  
+  <!-- 向统计信息表中插入数据 -->
+  <insert id="insertCountWXOrder">
+  
+  	INSERT INTO
+  		PLT_ORDER_STATISTIC_SEND
+  	    (TENANT_ID,ACTIVITY_SEQ_ID,CHANNEL_ID,SEND_ALL_COUNT,SEND_NUM,SEND_SUC_NUM,SEND_ERR_NUM,IS_FINISH,SEND_DATE)
+  	VALUES
+  		(#{config.tenantId},#{countWXOrder.activitySeqId},#{config.channelId},#{countWXOrder.ordereRecIdListSize},
+  		 #{countWXOrder.resultListSize},
+  		 <if test="countWXOrder.sucNum != null">
+  		 	#{countWXOrder.resultListSize},0,
+  		 </if>
+  		 <if test="countWXOrder.errNum != null">
+  		 	0,#{countWXOrder.resultListSize},
+  		 </if>
+  		 #{countWXOrder.isFinish},#{countWXOrder.sendTime})
+  		 
+  </insert>
+  
+  <!-- 更新统计信息表数据 -->
+  <update id="updateCountWXOrder">
+  	UPDATE
+  		PLT_ORDER_STATISTIC_SEND
+  	SET
+  	    SEND_NUM = SEND_NUM + #{countWXOrder.resultListSize},
+  	     <if test="countWXOrder.sucNum != null">
+  	     	SEND_SUC_NUM = SEND_SUC_NUM + #{countWXOrder.resultListSize},
+  		 </if>
+  		 <if test="countWXOrder.errNum != null">
+  		 	SEND_ERR_NUM = SEND_ERR_NUM + #{countWXOrder.resultListSize},
+  		 </if>
+  		 IS_FINISH = #{countWXOrder.isFinish},
+  		 SEND_DATE = #{countWXOrder.sendTime}
+  	WHERE
+  		TENANT_ID = #{config.tenantId}
+    AND
+        ACTIVITY_SEQ_ID = #{countWXOrder.activitySeqId}
+    AND 
+        CHANNEL_ID = #{config.channelId}
+  </update>
+  
+  <!-- 设置活动渠道状态 -->
+  <update id="setActivityChannelStatus">
+  
+  	UPDATE
+  		PLT_ACTIVITY_CHANNEL_STATUS
+  	SET
+  		STATUS = #{config.activityChannelSuccessStatus}
+    WHERE
+        ACTIVITY_SEQ_ID = #{wxActivityInfo.recId}
+    AND
+        CHANNEL_ID = #{config.channelId}
+    AND
+    	TENANT_ID = #{config.tenantId}
+    	
+  </update>
+  
+  
+
+</mapper>

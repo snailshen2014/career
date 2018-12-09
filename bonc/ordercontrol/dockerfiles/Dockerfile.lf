@@ -1,0 +1,5 @@
+FROM 10.162.17.13:30002/tomcat:7-jre7-ths
+COPY target/ordercontrol.war /usr/local/tomcat/webapps/
+RUN mv /usr/local/tomcat/webapps/ordercontrol.war /usr/local/tomcat/webapps/cordercontrol.war
+CMD ["catalina.sh", "run"]
+

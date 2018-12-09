@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.activityInfo.mapper.ActivityInfoMapper">
+
+  <resultMap type="com.bonc.busi.activityInfo.po.ActivityInfo" id="activityInfoMap">
+  
+ 	<result property="recId" column="REC_ID"/>
+  	<result property="activityId" column="ACTIVITY_ID"/>
+  	<result property="tenantId" column="TENANT_ID"/>
+  	<result property="dealMonth" column="DEAL_MONTH"/>
+  	<result property="sendStatus" column="STATUS"/>
+  	<result property="activityType" column="ACTIVITY_TYPE"/>
+  	
+  </resultMap>
+ 
+ 
+  <!-- 根据 tenantId ordStatus channelList 查询需要下发的数据 -->
+  <select id="findNeedSendActivityInfos"   resultMap="activityInfoMap">
+ 
+  	SELECT 
+  		 ACT.REC_ID,ACT.ACTIVITY_ID, ACT.TENANT_ID,
+  		ORD.DEAL_MONTH,CHA.STATUS,ACT.ACTIVITY_TYPE
+  	FROM 
+  		(	SELECT DISTINCT ACTIVITY_SEQ_ID,DEAL_MONTH 
+  			FROM PLT_ORDER_INFO_ONE 
+  			WHERE ORDER_STATUS= #{ordStatus}
+  			AND TENANT_ID = #{tenantId}
+  		) ORD,
+  		 (	SELECT  ACTIVITY_SEQ_ID,MIN(STATUS) STATUS 
+  		 	FROM PLT_ACTIVITY_CHANNEL_STATUS
+			WHERE TENANT_ID = #{tenantId}
+  			AND 
+ 		<foreach collection="channelList" open="(" close=")" item="channelId" separator="OR">
+  			CHANNEL_ID = #{channelId}
+  		</foreach>
+			AND (STATUS ='0' OR STATUS ='8')
+			GROUP BY ACTIVITY_SEQ_ID 
+  		) CHA,
+  		(	SELECT  REC_ID,ACTIVITY_ID,TENANT_ID,ACTIVITY_TYPE
+  		 	FROM PLT_ACTIVITY_INFO
+			WHERE TENANT_ID = #{tenantId}
+  			AND (ACTIVITY_STATUS='1' OR ACTIVITY_STATUS='8' OR ACTIVITY_STATUS='9') 
+  		 ) ACT
+	WHERE ORD.ACTIVITY_SEQ_ID = ACT.REC_ID  
+	AND ACT.REC_ID = CHA.ACTIVITY_SEQ_ID 
+  </select>
+  
+  <!--查询已下发的一级渠道 子活动计数--> 
+  <select id="findSendCountByParentActivityId" resultType="java.lang.Integer">
+   <![CDATA[
+  	SELECT  
+  		COUNT(DISTINCT T.ACTIVITY_SEQ_ID)
+  	FROM 
+  		 PLT_ACTIVITY_CHANNEL_STATUS T,PLT_ACTIVITY_INFO ACT
+  	WHERE
+  		T.ACTIVITY_SEQ_ID = ACT.REC_ID
+  	AND 
+  		T.STATUS <> '0' 
+  	AND
+  		T.CHANNEL_ID IN('1','2','9')
+  	AND
+  		ACT.PARENT_ACTIVITY = #{parentActivityId}
+    AND
+     	ACT.TENANT_ID = #{tenantId}
+  	]]>
+  </select>
+  
+  <!--查询周期性活动是否已下发--> 
+  <select id="findSendCountByActivityId" resultType="java.lang.Integer">
+  <![CDATA[
+  	SELECT  
+  		COUNT(DISTINCT T.ACTIVITY_SEQ_ID)
+  	FROM 
+  		 PLT_ACTIVITY_CHANNEL_STATUS T
+  	WHERE
+  		
+  		T.STATUS <> '0'
+  	AND
+  		T.CHANNEL_ID IN('1','2','9')
+  	AND
+  		T.ACTIVITY_ID = #{activityId}
+    AND
+     	T.TENANT_ID = #{tenantId}
+  		]]>
+  </select>
+ 
+</mapper>

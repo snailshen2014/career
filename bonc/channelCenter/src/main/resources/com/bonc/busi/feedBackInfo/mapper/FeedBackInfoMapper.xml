@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.feedBackInfo.mapper.FeedBackInfoMapper">
+
+  
+  <!-- 查询一级渠道单个渠道回执数据总量 -->
+  <select id="findYJQDCountByProvIdAndAccountTime" resultType="java.lang.Integer" statementType="STATEMENT">
+
+	SELECT
+  		REC_ID
+  	FROM
+  	    PLT_YJQD_CONTACT_INFO
+  	WHERE
+  	    <!-- ACCT_DATE = '${request.accountTime}'
+    AND -->
+     	PROV_ID = '${request.provId}'
+    AND
+        ${request.fieldName} = ${request.successFlag}
+    AND
+    	IS_HANDLE_FLAG = ${request.falseFlag}
+    AND
+    	TENANT_ID = '${request.TENANT_ID}'
+        
+  </select>
+  
+  <!-- 手厅相关查询语句 --> 
+  <!-- 分页查询手厅回执数据 -->
+  <select id="findSTFeedBackByProvIdAndAccountTime" resultType="java.util.HashMap">
+    <!-- oracle -->
+  	<!-- SELECT 
+	 	ACCT_DATE,USER_ID,ACTIVITY_ID,
+	 	CASE
+	 	WHEN is_dismissed=${request.successFlag} THEN 'yjqd.contact.success.order.success'
+	 	WHEN is_gwap_cnt3=${request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN is_gwap_cnt4=${request.successFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN is_gwap_cnt1=${request.successFlag} THEN 'yjqd.contact.success.no.click'
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE
+	 FROM 
+	 (SELECT 
+	 	ci.*,ROWNUM RN 
+	  FROM 
+	    (SELECT 
+	    	acct_date,user_id,activity_id,is_dismissed,is_gwap_cnt,
+     		is_gwap_cnt1,is_gwap_cnt2,is_gwap_cnt3,is_gwap_cnt4 
+     	 FROM 
+     	    PLT_YJQD_CONTACT_INFO
+     	 WHERE
+     	    ACCT_ = '${request.accountTime}'
+	     AND
+	     	prov_id = '${request.provId}'
+	     AND
+	        is_gwap_cnt = ${request.successFlag}
+	     AND
+    	    flag = ${request.falseFlag}) ci
+	  WHERE ROWNUM &lt;= ${request.endPage}
+	 )
+	 WHERE RN &gt; ${request.startPage} -->
+	 
+	 SELECT 
+	 	yci.REC_ID id,yci.USER_ID,yci.ACTIVITY_ID,
+	 	CASE
+	 	WHEN yci.IS_GWAP_CNT2=#{request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN yci.IS_GWAP_CNT2=#{request.falseFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN yci.IS_GWAP_CNT1=#{request.successFlag} THEN 'yjqd.contact.success.no.click'	
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE,
+	 	CASE
+	 	WHEN yci.IS_GWAP_CNT2=#{request.successFlag} OR yci.IS_GWAP_CNT2=#{request.falseFlag}
+	 		THEN yci.IS_GWAP_CNT2_DATE
+	 	ELSE yci.IS_GWAP_CNT1_DATE END
+	 	AS CONTACT_DATE,
+	 	oi.REC_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_TYPE
+	 FROM 
+	 	PLT_YJQD_CONTACT_INFO yci,PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_ONE oi
+	 WHERE
+       yci.REC_ID in
+	   <foreach item="item" index="index" collection="idList" open="(" separator="," close=")">
+	      #{item}
+	   </foreach>
+     AND
+     	yci.TENANT_ID = #{request.TENANT_ID}
+     AND
+        ai.TENANT_ID = #{request.TENANT_ID}
+     AND
+        oi.TENANT_ID = #{request.TENANT_ID} 
+     AND
+     	oi.ACTIVITY_SEQ_ID = yci.ACTIVITY_ID
+     AND
+        ai.REC_ID = yci.ACTIVITY_ID
+     AND
+        oi.USER_ID = yci.USER_ID
+     AND 
+    	oi.CHANNEL_ID = #{request.CHANNEL_ID}
+        
+  </select>
+  
+  
+  <!-- 网厅相关查询语句 -->
+  <!-- 分页查询网厅回执数据  -->
+  <select id="findWTFeedBackByProvIdAndAccountTime" resultType="java.util.HashMap">
+  
+	 <!-- SELECT 
+	 	acct_date,user_id,activity_id,
+	 	CASE
+	 	WHEN is_dismissed=${request.successFlag} THEN 'yjqd.contact.success.order.success'
+	 	WHEN is_gnet_cnt3=${request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN is_gnet_cnt4=${request.successFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN is_gnet_cnt1=${request.successFlag} THEN 'yjqd.contact.success.no.click'
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE
+	 FROM 
+	 (SELECT 
+	 	ci.*,ROWNUM RN 
+	  FROM 
+	    (SELECT 
+	    	acct_date,user_id,activity_id,is_dismissed,is_gnet_cnt,
+     		is_gnet_cnt1,is_gnet_cnt2,is_gnet_cnt3,is_gnet_cnt4 
+     	 FROM 
+     	    ${tableName}
+     	 WHERE
+     	    acct_date = '${request.accountTime}'
+	     AND
+	     	prov_id = '${request.provId}'
+	     AND
+	        is_gnet_cnt = ${request.successFlag}
+	     AND
+    	    flag = ${request.falseFlag}) ci
+	  WHERE ROWNUM &lt;= ${request.endPage}
+	 )
+	 WHERE RN &gt; ${request.startPage} --> 
+	 
+	 SELECT 
+	 	yci.REC_ID id,yci.USER_ID,yci.ACTIVITY_ID,
+	 	CASE
+	 	WHEN yci.IS_GNET_CNT2=#{request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN yci.IS_GNET_CNT2=#{request.falseFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN yci.IS_GNET_CNT1=#{request.successFlag} THEN 'yjqd.contact.success.no.click'	
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE,
+	 	CASE
+	 	WHEN yci.IS_GNET_CNT2=#{request.successFlag} OR yci.IS_GNET_CNT2=#{request.falseFlag}
+	 		THEN yci.IS_GNET_CNT2_DATE
+	 	ELSE yci.IS_GNET_CNT1_DATE END
+	 	AS CONTACT_DATE,
+	 	oi.REC_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_TYPE
+	 FROM 
+	 	PLT_YJQD_CONTACT_INFO yci,PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_ONE oi
+	 WHERE
+       yci.REC_ID in
+	   <foreach item="item" index="index" collection="idList" open="(" separator="," close=")">
+	      #{item}
+	   </foreach>
+     AND
+     	yci.TENANT_ID = #{request.TENANT_ID}
+     AND
+        ai.TENANT_ID = #{request.TENANT_ID}
+     AND
+        oi.TENANT_ID = #{request.TENANT_ID} 
+     AND
+     	oi.ACTIVITY_SEQ_ID = yci.ACTIVITY_ID
+     AND
+        ai.REC_ID = yci.ACTIVITY_ID
+     AND
+        oi.USER_ID = yci.USER_ID
+     AND 
+    	oi.CHANNEL_ID = #{request.CHANNEL_ID}
+     	
+  </select>
+  
+  
+  <!-- 沃视窗相关查询语句 --> 
+  <!-- 分页查询沃视窗回执数据  -->
+  <select id="findWSCFeedBackByProvIdAndAccountTime" resultType="java.util.HashMap">
+  
+	 <!-- SELECT 
+	 	acct_date,user_id,activity_id,
+	 	CASE
+	 	WHEN is_dismissed=${request.successFlag} THEN 'yjqd.contact.success.order.success'
+	 	WHEN is_gwow_cnt3=${request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN is_gwow_cnt4=${request.successFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN is_gwow_cnt1=${request.successFlag} THEN 'yjqd.contact.success.no.click' 
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE
+	 FROM 
+	 (SELECT 
+	 	ci.*,ROWNUM RN 
+	  FROM 
+	    (SELECT 
+	    	acct_date,user_id,activity_id,is_dismissed,is_gwow_cnt,
+     		is_gwow_cnt1,is_gwow_cnt2,is_gwow_cnt3,is_gwow_cnt4 
+     	 FROM 
+     	    ${tableName}
+     	 WHERE
+     	    acct_date = '${request.accountTime}'
+	     AND
+	     	prov_id = '${request.provId}'
+	     AND
+	        is_gwow_cnt = ${request.successFlag}
+	     AND
+    	    flag = ${request.falseFlag}) ci
+	  WHERE ROWNUM &lt;= ${request.endPage}
+	 )
+	 WHERE RN &gt; ${request.startPage} --> 
+	 
+	 SELECT 
+	 	yci.REC_ID id,yci.USER_ID,yci.ACTIVITY_ID,
+	 	CASE
+	 	WHEN yci.IS_GWOW_CNT2=#{request.successFlag} THEN 'yjqd.contact.success.click.success'
+	 	WHEN yci.IS_GWOW_CNT2=#{request.falseFlag} THEN 'yjqd.contact.success.click.fail'
+	 	WHEN yci.IS_GWOW_CNT1=#{request.successFlag} THEN 'yjqd.contact.success.no.click'	
+	 	ELSE 'yjqd.contact.fail' END
+	 	AS CONTACT_CODE,
+	 	CASE
+	 	WHEN yci.IS_GWOW_CNT2=#{request.successFlag} OR yci.IS_GWOW_CNT2=#{request.falseFlag}
+	 		THEN yci.IS_GWOW_CNT2_DATE
+	 	ELSE yci.IS_GWOW_CNT1_DATE END
+	 	AS CONTACT_DATE,
+	 	oi.REC_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_TYPE
+	 FROM 
+	 	PLT_YJQD_CONTACT_INFO yci,PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_ONE oi
+	 WHERE
+       yci.REC_ID in
+	   <foreach item="item" index="index" collection="idList" open="(" separator="," close=")">
+	      #{item}
+	   </foreach>
+     AND
+     	yci.TENANT_ID = #{request.TENANT_ID}
+     AND
+        ai.TENANT_ID = #{request.TENANT_ID}
+     AND
+        oi.TENANT_ID = #{request.TENANT_ID} 
+     AND
+     	oi.ACTIVITY_SEQ_ID = yci.ACTIVITY_ID
+     AND
+        ai.REC_ID = yci.ACTIVITY_ID
+     AND
+        oi.USER_ID = yci.USER_ID
+     AND 
+    	oi.CHANNEL_ID = #{request.CHANNEL_ID}
+	  
+  </select>
+  
+  <!-- 更新一级渠道回执状态 -->
+  <update id="updateYJQDBack" statementType="STATEMENT">
+  
+  	UPDATE 
+  		PLT_YJQD_CONTACT_INFO
+  	SET
+  		IS_HANDLE_FLAG = ${request.successFlag}
+  	WHERE
+  		IS_HANDLE_FLAG = ${request.falseFlag}
+  	AND
+  		REC_ID in
+  		<foreach item="item" index="index" collection="resultIdList" open="(" separator="," close=")">
+	      #{item}
+	    </foreach>
+  	AND
+  		TENANT_ID = '${request.TENANT_ID}'
+  		
+  </update>
+  
+  <!-- 微信相关查询 -->
+  <!-- 获得微信回执数据总量 -->
+  <select id="findWXCountByTenantIdAndTouchTime" resultType="java.lang.Integer">
+  
+  	SELECT 
+  		id
+  	FROM
+  	    WX_BACK_INFO
+  	WHERE
+        <!-- unix_timestamp(back_time) between unix_timestamp(#{request.startTime}) and unix_timestamp(#{request.endTime}) 
+    AND -->
+     	TENANT_ID = #{request.TENANT_ID}
+    AND
+        flag = #{request.falseFlag}
+   <!--  OR
+        unix_timestamp(back_wx_time) between unix_timestamp(#{request.startTime}) and unix_timestamp(#{request.endTime}) 
+    AND
+     	TENANT_ID = #{request.TENANT_ID}
+    AND
+        flag = #{request.falseFlag} -->
+     	
+  </select>
+
+  <!-- 分页查询微信回执数据  -->
+  <select id="findWXFeedBackByTenantIdAndTouchTime" resultType="java.util.HashMap">
+  
+     SELECT
+     	wbi.id,wbi.order_id,
+     	CASE
+     	WHEN wbi.back_order_time is not null THEN wbi.back_order_code
+     	WHEN wbi.back_click_time is not null THEN wbi.back_click_code
+        ELSE wbi.back_reach_code END 
+        AS back_code,
+	    CASE
+	    WHEN wbi.back_order_time is not null THEN wbi.back_order_time
+	    WHEN wbi.back_click_time is not null THEN wbi.back_click_time
+	    ELSE wbi.back_reach_time END   
+        AS back_time,
+        oi.USER_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_ID,ai.ACTIVITY_TYPE
+     FROM 
+     	WX_BACK_INFO wbi,PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_WEIXIN oi
+     WHERE
+       id in
+     <foreach item="item" index="index" collection="idList" open="(" separator="," close=")">
+        #{item}
+     </foreach>
+     AND
+     	wbi.TENANT_ID = #{request.TENANT_ID}
+     AND
+        oi.TENANT_ID = #{request.TENANT_ID}
+     AND
+        ai.TENANT_ID = #{request.TENANT_ID}  
+     AND
+        oi.REC_ID = wbi.order_id
+     AND
+     	ai.REC_ID = oi.ACTIVITY_SEQ_ID
+  </select>
+  
+  <!-- 更新微信渠道回执状态 -->
+  <update id="updateWXBack">
+  	
+  	UPDATE
+  		WX_BACK_INFO
+  	SET
+  		flag = #{request.successFlag}
+  	WHERE
+  	    flag = #{request.falseFlag}
+  	AND
+  		id in
+  		<foreach item="item" index="index" collection="resultIdList" open="(" separator="," close=")">
+        	#{item}
+        </foreach>
+  	AND
+  		TENANT_ID = #{request.TENANT_ID}
+  </update>
+  
+  <!-- 关联一级渠道其他必要信息 -->
+  <!-- <select id="findYJQDOtherInfo" resultType="java.util.HashMap">
+  
+  	SELECT
+  		oi.REC_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_TYPE
+  	FROM
+  	    PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_WEIXIN oi
+    WHERE
+        oi.ACTIVITY_SEQ_ID = #{yjqdFeedBackInfo.ACTIVITY_ID}
+    AND
+        oi.ACTIVITY_SEQ_ID = ai.REC_ID
+    AND
+        oi.USER_ID = #{yjqdFeedBackInfo.USER_ID}
+    AND 
+    	oi.CHANNEL_ID = #{request.CHANNEL_ID}
+    AND
+        ai.TENANT_ID = #{request.TENANT_ID}
+    AND
+        oi.TENANT_ID = #{request.TENANT_ID}  
+          
+  </select> -->
+  
+  <!-- 关联微信渠道其他必要信息 -->
+  <!-- <select id="findWXOtherInfo" resultType="java.util.HashMap">
+  
+  	SELECT
+  		oi.USER_ID,oi.PHONE_NUMBER,oi.SERVICE_TYPE,ai.ACTIVITY_ID,ai.ACTIVITY_TYPE
+  	FROM
+  	    PLT_ACTIVITY_INFO ai,PLT_ORDER_INFO_WEIXIN oi
+    WHERE
+        oi.ACTIVITY_SEQ_ID = ai.REC_ID
+    AND
+        oi.TENANT_ID = #{request.TENANT_ID}
+    AND
+        ai.TENANT_ID = #{request.TENANT_ID}   
+    AND
+        oi.REC_ID = #{wxFeedBackInfo.order_id}
+        
+  </select> -->
+
+</mapper>

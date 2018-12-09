@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.removetohis.mapper.RemoveToHisMapper">
+
+  <!-- 将微信工单移入历史表 -->
+  <insert id="insertWXOrderHis" statementType="STATEMENT">
+    
+    /*!mycat:sql=SELECT * FROM PLT_USER_LABEL WHERE TENANT_ID = '${tenantId}' */
+  	INSERT INTO
+  		WX_ORDER_INFO_HIS
+  	SELECT 
+  	    *,'${inputTime}'
+    FROM
+    	WX_ORDER_INFO
+    WHERE
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(order_start_time)
+    AND
+        TENANT_ID = '${tenantId}'
+        
+  </insert>
+  
+  <!-- 删除微信工单 -->
+  <delete id="deleteWXOrder">
+  
+  	DELETE 
+  	FROM
+    	WX_ORDER_INFO
+    WHERE
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(order_start_time)
+    AND
+        TENANT_ID = #{tenantId}
+        
+  </delete>
+  
+  <!-- 将微信回执移入历史表 -->
+  <insert id="insertWXBackHis">
+  	
+  	/*!mycat:sql=SELECT * FROM PLT_USER_LABEL WHERE TENANT_ID = '${tenantId}' */
+  	INSERT INTO
+  		WX_BACK_INFO_HIS
+  	SELECT 
+  	    *,'${inputTime}'
+    FROM
+    	WX_BACK_INFO
+    WHERE
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(back_order_time)
+    AND
+        TENANT_ID = '${tenantId}'
+    OR
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(back_click_time)
+    AND
+        back_order_time is null
+    AND
+        TENANT_ID = '${tenantId}'
+    OR
+    	date_sub(curdate(), INTERVAL 30 DAY) >= date(back_reach_time)
+    AND
+        back_order_time is null
+    AND
+        back_click_time is null
+    AND
+        TENANT_ID = '${tenantId}'
+  	
+  </insert>
+  
+  <!-- 删除微信回执 -->
+  <delete id="deleteWXBack">
+  
+  	DELETE
+  	FROM
+    	WX_BACK_INFO
+    WHERE
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(back_order_time)
+    AND
+        TENANT_ID = #{tenantId}
+    OR
+        date_sub(curdate(), INTERVAL 30 DAY) >= date(back_click_time)
+    AND
+        back_order_time is null
+    AND
+        TENANT_ID = #{tenantId}
+    OR
+    	date_sub(curdate(), INTERVAL 30 DAY) >= date(back_reach_time)
+    AND
+        back_order_time is null
+    AND
+        back_click_time is null
+    AND
+        TENANT_ID = #{tenantId}
+  
+  </delete>
+  
+  <!-- 将一级渠道回执移入历史表 -->
+  <insert id="insertYJQDBackHis">
+  
+    /*!mycat:sql=SELECT * FROM PLT_USER_LABEL WHERE TENANT_ID = '${tenantId}' */
+    INSERT INTO
+    	PLT_YJQD_CONTACT_INFO_HIS
+  	SELECT 
+  	    *,'${inputTime}'
+  	FROM 
+    	PLT_YJQD_CONTACT_INFO
+    WHERE 
+    	TO_DAYS('${date}')-TO_DAYS(ACCT_DATE)>=30
+    AND
+    	TENANT_ID = '${tenantId}'
+    	
+  </insert>
+  
+  <!-- 删除一级渠道回执 -->
+  <delete id="deleteYJQDBack">
+  
+  	DELETE
+  	FROM
+  		PLT_YJQD_CONTACT_INFO
+  	WHERE 
+    	TO_DAYS(#{date})-TO_DAYS(ACCT_DATE)>=30
+    AND
+    	TENANT_ID = #{tenantId}		
+  
+  </delete>
+ 
+</mapper>

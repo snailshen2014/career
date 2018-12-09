@@ -1,0 +1,11 @@
+FROM 10.162.17.13:30002/testtool:tomcat7-jre7
+
+# RUN groupadd -r docker -g 1010 && useradd -u 1009 -r -g docker  -s /bin/bash docker
+COPY target/ordercenter.war /usr/local/tomcat/webapps/
+# RUN chown -R docker:docker /usr/local/tomcat
+# RUN mkdir /mnt/order
+# RUN chown -R docker:docker /mnt
+# USER docker
+
+CMD ["catalina.sh", "run"]
+

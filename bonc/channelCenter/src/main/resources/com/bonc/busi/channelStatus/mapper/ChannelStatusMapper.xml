@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.busi.channelStatus.mapper.ChannelStatusMapper">
+ 
+  <!-- 根据 tenantId ordStatus channelList 查询需要下发的数据 -->
+  <update id="updateChannelSendStatus"  >
+     UPDATE PLT_ACTIVITY_CHANNEL_STATUS 
+     	SET STATUS =#{status}
+     WHERE TENANT_ID=#{tenantId}
+        AND ACTIVITY_SEQ_ID IN 
+        <foreach collection="activitySeqIdList" separator="," close=")" open="(" item="seqId"> 
+			 #{seqId}
+		</foreach>	
+        AND CHANNEL_ID IN 
+         <foreach collection="channelList" open="(" close=")" item="channelId" separator=",">
+  			  #{channelId}
+  		</foreach>
+  </update>
+ 
+</mapper>

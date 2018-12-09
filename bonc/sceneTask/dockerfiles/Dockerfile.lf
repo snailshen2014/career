@@ -1,0 +1,4 @@
+FROM bcm-registry:30000/tomcat:7-jre7-nio-apm
+COPY target/sceneTask.war /usr/local/tomcat/webapps/
+
+
